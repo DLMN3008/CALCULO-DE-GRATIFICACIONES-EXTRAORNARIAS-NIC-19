@@ -478,7 +478,6 @@ if archivo:
 
         flujo = calcular_hitos_pucm(
             trabajador=row,
-            parametros=parametros,
             tasa_descuento=tasa_descuento,
             incremento=incremento_salarial
         )
