@@ -463,8 +463,7 @@ if archivo:
     # ======================================================
 
     errores = validar_base(
-        base,
-        parametros
+        base
     )
 
     if len(errores) > 0:
