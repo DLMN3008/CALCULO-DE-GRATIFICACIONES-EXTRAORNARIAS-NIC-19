@@ -1053,7 +1053,7 @@ c1,c2,c3,c4,c5,c6 = st.columns(6)
 
 c1.metric(
     "DBO Total",
-    f"S/ {TOTAL_DBO:,.0f}"
+    f"S/ {TOTAL_DBO if 'TOTAL_DBO' in locals() else 0:,.0f}"
 )
 
 c2.metric(
