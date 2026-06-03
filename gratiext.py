@@ -497,17 +497,6 @@ archivo = st.file_uploader(
     type=["xlsx"]
 )
 
-TOTAL_DBO = 0
-TOTAL_VP = 0
-TOTAL_BENEFICIO = 0
-TOTAL_SERVICE = 0
-TOTAL_INTEREST = 0
-TOTAL_GASTO = 0
-
-dbo_trabajador = pd.DataFrame()
-df_flujos = pd.DataFrame()
-sensibilidad = pd.DataFrame()
-    
 # ==========================================================
 # PARAMETROS DEL MODELO
 # ==========================================================
@@ -1064,32 +1053,32 @@ c1,c2,c3,c4,c5,c6 = st.columns(6)
 
 c1.metric(
     "DBO Total",
-    f"S/ {TOTAL_DBO if TOTAL_DBO else 0:,.0f}"
+    f"S/ {TOTAL_DBO:,.0f}"
 )
 
 c2.metric(
     "Valor Presente",
-    f"S/ {TOTAL_VP if TOTAL_VP else 0:,.0f}"
+    f"S/ {TOTAL_VP:,.0f}"
 )
 
 c3.metric(
     "Beneficio Futuro",
-    f"S/ {TOTAL_BENEFICIO if TOTAL_BENEFICIO else 0:,.0f}"
+    f"S/ {TOTAL_BENEFICIO:,.0f}"
 )
 
 c4.metric(
     "Service Cost",
-    f"S/ {TOTAL_SERVICE if TOTAL_SERVICE else 0:,.0f}"
+    f"S/ {TOTAL_SERVICE:,.0f}"
 )
 
 c5.metric(
     "Interest Cost",
-    f"S/ {TOTAL_INTEREST if TOTAL_INTEREST else 0:,.0f}"
+    f"S/ {TOTAL_INTEREST:,.0f}"
 )
 
 c6.metric(
     "Gasto NIC19",
-    f"S/ {TOTAL_GASTO if TOTAL_GASTO else 0:,.0f}"
+    f"S/ {TOTAL_GASTO:,.0f}"
 )
 
 # ==========================================================
