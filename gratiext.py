@@ -96,55 +96,6 @@ def calcular_antiguedad(
 # LECTURA DINAMICA PARAMETROS
 # ==========================================================
 
-def cargar_parametros(df_param):
-
-    parametros = {}
-
-    sindicatos = (
-        df_param.iloc[0, 2:]
-        .fillna("")
-        .astype(str)
-        .str.strip()
-        .tolist()
-    )
-
-    for idx, sindicato in enumerate(sindicatos):
-
-        if sindicato == "":
-            continue
-
-        parametros[sindicato] = {}
-
-        for fila in range(1, len(df_param)):
-
-            try:
-
-                anio_txt = str(
-                    df_param.iloc[fila, 1]
-                ).strip()
-
-                if "AÑOS" not in anio_txt.upper():
-                    continue
-
-                anio = int(
-                    anio_txt
-                    .upper()
-                    .replace("AÑOS", "")
-                    .strip()
-                )
-
-                factor = df_param.iloc[
-                    fila,
-                    idx + 2
-                ]
-
-                parametros[sindicato][anio] = factor
-
-            except Exception:
-                continue
-
-    return parametros
-
 # ==========================================================
 # VALIDACIONES
 # ==========================================================
