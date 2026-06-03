@@ -496,6 +496,11 @@ archivo = st.file_uploader(
     "Seleccione archivo Excel",
     type=["xlsx"]
 )
+dbo_trabajador = pd.DataFrame()
+df_flujos = pd.DataFrame()
+sensibilidad = pd.DataFrame()
+
+if archivo:
 
 # ==========================================================
 # PARAMETROS DEL MODELO
@@ -1384,6 +1389,13 @@ with tab2:
     st.subheader(
         "Resumen por Trabajador"
     )
+    if dbo_trabajador.empty:
+
+    st.warning(
+        "No existen resultados actuariales para mostrar."
+    )
+
+    st.stop()
 
     st.dataframe(
 
