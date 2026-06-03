@@ -1079,7 +1079,7 @@ c3.metric(
 
 c4.metric(
     "Service Cost",
-    f"S/ {TOTAL_SERVICE if TOTAL_SERVICE else 0:,.0f}}"
+    f"S/ {TOTAL_SERVICE if TOTAL_SERVICE else 0:,.0f}"
 )
 
 c5.metric(
