@@ -459,32 +459,6 @@ if archivo:
     )
 
     # ======================================================
-    # VALIDACIONES
-    # ======================================================
-
-    errores = validar_base(
-        base
-    )
-
-    if len(errores) > 0:
-
-        st.error(
-            "Se encontraron errores en la información."
-        )
-
-        errores_df = pd.DataFrame({
-            "Observación":
-            errores
-        })
-
-        st.dataframe(
-            errores_df,
-            use_container_width=True
-        )
-
-        st.stop()
-
-    # ======================================================
     # MOTOR ACTUARIAL
     # ======================================================
 
