@@ -1,512 +1,183 @@
 # CALCULO-DE-GRATIFICACIONES-EXTRAORNARIAS-NIC-19
 import streamlit as st
 import pandas as pd
+import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime
+from io import BytesIO
 
-from modules.actuarial_engine import (
-    cargar_parametros,
-    calcular_edad,
-    calcular_antiguedad,
-    calcular_flujos_trabajador
-)
+# ======================================================
+# PARAMETROS ACTUARIALES
+# ======================================================
 
-from modules.validator import (
-    validar_base_datos
-)
+FECHA_VALORACION = datetime(2025, 12, 31)
+TASA_DESCUENTO = 0.07
+INCREMENTO_SALARIAL = 0.03
+EDAD_JUBILACION = 70
 
-from modules.excel_export import (
-    generar_excel
-)
+# ======================================================
+# FUNCIONES ACTUARIALES
+# ======================================================
 
-from modules.pdf_report import (
-    generar_pdf
-)
+def calcular_edad(fecha_nacimiento):
+    return (
+        FECHA_VALORACION - fecha_nacimiento
+    ).days / 365.25
 
-# =====================================================
-# CONFIGURACION
-# =====================================================
 
-st.set_page_config(
-    page_title="NIC 19 - Gratificación por Tiempo de Servicio",
-    page_icon="📊",
-    layout="wide"
-)
+def calcular_antiguedad(fecha_ingreso):
+    return (
+        FECHA_VALORACION - fecha_ingreso
+    ).days / 365.25
 
-# =====================================================
-# SIDEBAR
-# =====================================================
 
-st.sidebar.title("NIC 19")
+def sueldo_proyectado(
+    sueldo,
+    anios,
+    incremento=INCREMENTO_SALARIAL
+):
+    return sueldo * ((1 + incremento) ** anios)
 
-st.sidebar.markdown("### Parámetros Actuariales")
 
-fecha_valoracion = st.sidebar.date_input(
-    "Fecha de Valoración",
-    datetime(2025,12,31)
-)
+def valor_presente(
+    flujo,
+    anios,
+    tasa=TASA_DESCUENTO
+):
+    return flujo / ((1 + tasa) ** anios)
 
-tasa_descuento = st.sidebar.number_input(
-    "Tasa de Descuento %",
-    value=7.0
-) / 100
 
-incremento_salarial = st.sidebar.number_input(
-    "Incremento Salarial %",
-    value=3.0
-) / 100
+def validar_base_datos(df):
 
-edad_jubilacion = st.sidebar.number_input(
-    "Edad Jubilación",
-    value=70
-)
+    errores = []
 
-# =====================================================
-# TITULO
-# =====================================================
+    columnas = [
+        "CODIGO DEL TRABAJADOR",
+        "NOMBRES",
+        "SINDICATO",
+        "FECHA DE INGRESO",
+        "FECHA DE NACIMIENTO",
+        "SUELDO BASICO"
+    ]
 
-st.title("📊 Sistema Actuarial NIC 19")
-st.caption(
-    "Gratificación por Tiempo de Servicio"
-)
+    for col in columnas:
 
-# =====================================================
-# CARGA ARCHIVO
-# =====================================================
-
-archivo = st.file_uploader(
-    "Seleccione archivo Excel",
-    type=["xlsx"]
-)
-
-if archivo:
-
-    # =================================================
-    # LECTURA
-    # =================================================
-
-    try:
-
-        df_base = pd.read_excel(
-            archivo,
-            sheet_name="BASE DE DATOS"
-        )
-
-        df_param = pd.read_excel(
-            archivo,
-            sheet_name="PARAMETROS",
-            header=None
-        )
-
-    except Exception as e:
-
-        st.error(str(e))
-        st.stop()
-
-    # =================================================
-    # VALIDACION
-    # =================================================
-
-    errores = validar_base_datos(df_base)
-
-    if len(errores) > 0:
-
-        st.error(
-            "Se encontraron errores."
-        )
-
-        st.dataframe(
-            pd.DataFrame(
-                errores,
-                columns=["Observación"]
+        if col not in df.columns:
+            errores.append(
+                f"Falta columna: {col}"
             )
-        )
 
-        st.stop()
+    return errores
 
-    # =================================================
-    # PREPARACION
-    # =================================================
 
-    df_base["FECHA DE INGRESO"] = pd.to_datetime(
-        df_base["FECHA DE INGRESO"]
-    )
+def cargar_parametros(df_param):
 
-    df_base["FECHA DE NACIMIENTO"] = pd.to_datetime(
-        df_base["FECHA DE NACIMIENTO"]
-    )
+    parametros = {}
 
-    df_base["EDAD"] = df_base[
-        "FECHA DE NACIMIENTO"
-    ].apply(calcular_edad)
+    sindicatos = df_param.iloc[0, 2:].tolist()
 
-    df_base["ANTIGUEDAD"] = df_base[
-        "FECHA DE INGRESO"
-    ].apply(calcular_antiguedad)
+    for i, sindicato in enumerate(sindicatos):
 
-    parametros = cargar_parametros(
-        df_param
-    )
+        parametros[sindicato] = {}
 
-    # =================================================
-    # MOTOR ACTUARIAL
-    # =================================================
+        for fila in range(1, len(df_param)):
+
+            anio_txt = str(
+                df_param.iloc[fila, 1]
+            )
+
+            if "AÑOS" not in anio_txt:
+                continue
+
+            anio = int(
+                anio_txt.replace(
+                    "AÑOS",
+                    ""
+                ).strip()
+            )
+
+            factor = df_param.iloc[
+                fila,
+                i + 2
+            ]
+
+            parametros[sindicato][anio] = factor
+
+    return parametros
+
+
+def calcular_flujos_trabajador(
+    trabajador,
+    parametros
+):
+
+    sindicato = trabajador["SINDICATO"]
+
+    if sindicato not in parametros:
+        return pd.DataFrame()
+
+    sueldo = trabajador["SUELDO BASICO"]
+
+    antiguedad = trabajador["ANTIGUEDAD"]
 
     flujos = []
 
-    progress = st.progress(0)
+    for hito, factor in parametros[sindicato].items():
 
-    total = len(df_base)
+        if pd.isna(factor):
+            continue
 
-    for i,row in df_base.iterrows():
+        if str(factor) == "-":
+            continue
 
-        flujo = calcular_flujos_trabajador(
-            row,
-            parametros,
-            tasa_descuento,
-            incremento_salarial
+        if antiguedad >= hito:
+            continue
+
+        faltante = hito - antiguedad
+
+        sueldo_futuro = sueldo_proyectado(
+            sueldo,
+            faltante
         )
 
-        flujos.append(flujo)
-
-        progress.progress(
-            (i+1)/total
+        beneficio = (
+            sueldo_futuro *
+            float(factor)
         )
 
-    df_flujos = pd.concat(
-        flujos,
-        ignore_index=True
-    )
-
-    # =================================================
-    # DBO
-    # =================================================
-
-    dbo_trabajador = (
-        df_flujos
-        .groupby(
-            ["CODIGO","NOMBRE"]
-        )
-        ["DBO"]
-        .sum()
-        .reset_index()
-    )
-
-    dbo_trabajador.rename(
-        columns={
-            "DBO":"DBO_TOTAL"
-        },
-        inplace=True
-    )
-
-    total_dbo = (
-        dbo_trabajador[
-            "DBO_TOTAL"
-        ].sum()
-    )
-
-    total_beneficio = (
-        df_flujos[
-            "BENEFICIO"
-        ].sum()
-    )
-
-    total_vp = (
-        df_flujos[
-            "VP"
-        ].sum()
-    )
-
-    interest_cost = (
-        total_dbo *
-        tasa_descuento
-    )
-
-    service_cost = (
-        total_dbo /
-        edad_jubilacion
-    )
-
-    gasto_nic19 = (
-        interest_cost +
-        service_cost
-    )
-
-    # =================================================
-    # KPIs
-    # =================================================
-
-    st.subheader("Indicadores")
-
-    c1,c2,c3,c4,c5 = st.columns(5)
-
-    c1.metric(
-        "DBO",
-        f"S/ {total_dbo:,.0f}"
-    )
-
-    c2.metric(
-        "Valor Presente",
-        f"S/ {total_vp:,.0f}"
-    )
-
-    c3.metric(
-        "Beneficios Futuros",
-        f"S/ {total_beneficio:,.0f}"
-    )
-
-    c4.metric(
-        "Interest Cost",
-        f"S/ {interest_cost:,.0f}"
-    )
-
-    c5.metric(
-        "Gasto NIC19",
-        f"S/ {gasto_nic19:,.0f}"
-    )
-
-    # =================================================
-    # DASHBOARD
-    # =================================================
-
-    tab1,tab2,tab3,tab4,tab5,tab6 = st.tabs([
-        "Dashboard",
-        "Flujos",
-        "Sensibilidad",
-        "Validaciones",
-        "Glosario",
-        "Exportar"
-    ])
-
-    # =================================================
-    # DASHBOARD
-    # =================================================
-
-    with tab1:
-
-        st.subheader(
-            "DBO por Sindicato"
+        vp = valor_presente(
+            beneficio,
+            faltante
         )
 
-        sind = (
-            df_flujos
-            .groupby("SINDICATO")
-            ["DBO"]
-            .sum()
-            .reset_index()
+        proporcion = (
+            antiguedad / hito
         )
 
-        fig = px.bar(
-            sind,
-            x="SINDICATO",
-            y="DBO"
-        )
+        dbo = vp * proporcion
 
-        st.plotly_chart(
-            fig,
-            use_container_width=True
-        )
-
-        st.subheader(
-            "Top 20 Trabajadores"
-        )
-
-        top20 = (
-            dbo_trabajador
-            .nlargest(
-                20,
-                "DBO_TOTAL"
-            )
-        )
-
-        fig2 = px.bar(
-            top20,
-            x="NOMBRE",
-            y="DBO_TOTAL"
-        )
-
-        st.plotly_chart(
-            fig2,
-            use_container_width=True
-        )
-
-        st.subheader(
-            "Sunburst"
-        )
-
-        sun = px.sunburst(
-            df_flujos,
-            path=[
-                "SINDICATO",
-                "NOMBRE"
-            ],
-            values="DBO"
-        )
-
-        st.plotly_chart(
-            sun,
-            use_container_width=True
-        )
-
-        st.subheader(
-            "Heatmap"
-        )
-
-        pivot = pd.pivot_table(
-            df_flujos,
-            values="DBO",
-            index="SINDICATO",
-            columns="HITO",
-            aggfunc="sum"
-        )
-
-        heat = px.imshow(
-            pivot,
-            text_auto=True
-        )
-
-        st.plotly_chart(
-            heat,
-            use_container_width=True
-        )
-
-        st.subheader(
-            "Waterfall DBO"
-        )
-
-        waterfall = go.Figure(
-            go.Waterfall(
-                x=[
-                    "DBO",
-                    "Interest",
-                    "Service"
+        flujos.append({
+            "CODIGO":
+                trabajador[
+                    "CODIGO DEL TRABAJADOR"
                 ],
-                y=[
-                    total_dbo,
-                    interest_cost,
-                    service_cost
-                ]
-            )
-        )
-
-        st.plotly_chart(
-            waterfall,
-            use_container_width=True
-        )
-
-    # =================================================
-    # FLUJOS
-    # =================================================
-
-    with tab2:
-
-        st.dataframe(
-            df_flujos,
-            use_container_width=True
-        )
-
-    # =================================================
-    # SENSIBILIDAD
-    # =================================================
-
-    with tab3:
-
-        sensibilidad = pd.DataFrame({
-            "Tasa":[6,7,8],
-            "DBO":[
-                total_dbo*1.08,
-                total_dbo,
-                total_dbo*0.93
-            ]
+            "NOMBRE":
+                trabajador[
+                    "NOMBRES"
+                ],
+            "SINDICATO":
+                sindicato,
+            "HITO":
+                hito,
+            "FACTOR":
+                factor,
+            "BENEFICIO":
+                beneficio,
+            "VP":
+                vp,
+            "DBO":
+                dbo
         })
 
-        fig = px.line(
-            sensibilidad,
-            x="Tasa",
-            y="DBO",
-            markers=True
-        )
-
-        st.plotly_chart(
-            fig,
-            use_container_width=True
-        )
-
-        st.dataframe(
-            sensibilidad
-        )
-
-    # =================================================
-    # VALIDACIONES
-    # =================================================
-
-    with tab4:
-
-        st.success(
-            "Base validada correctamente."
-        )
-
-        st.dataframe(df_base)
-
-    # =================================================
-    # GLOSARIO
-    # =================================================
-
-    with tab5:
-
-        st.markdown("""
-### DBO
-Defined Benefit Obligation.
-
-### PUCM
-Projected Unit Credit Method.
-
-### Interest Cost
-Costo financiero actuarial.
-
-### Service Cost
-Costo del servicio devengado.
-
-### Valor Presente
-Valor descontado de los beneficios futuros.
-
-### Beneficio Futuro
-Monto esperado al cumplir el hito.
-
-### Sensibilidad
-Impacto del cambio de tasa de descuento.
-
-### Hito
-Años de servicio que generan beneficio.
-        """)
-
-    # =================================================
-    # EXPORTACIONES
-    # =================================================
-
-    with tab6:
-
-        excel_file = generar_excel(
-            df_base,
-            df_flujos,
-            dbo_trabajador
-        )
-
-        st.download_button(
-            "📥 Descargar Excel",
-            excel_file,
-            "NIC19_RESULTADOS.xlsx"
-        )
-
-        pdf_file = generar_pdf(
-            total_dbo,
-            gasto_nic19,
-            total_beneficio
-        )
-
-        st.download_button(
-            "📄 Descargar PDF",
-            pdf_file,
-            "NIC19_REPORTE.pdf"
-        )
+    return pd.DataFrame(flujos)
