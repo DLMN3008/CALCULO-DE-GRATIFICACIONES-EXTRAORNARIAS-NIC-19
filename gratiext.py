@@ -507,7 +507,6 @@ TOTAL_GASTO = 0
 dbo_trabajador = pd.DataFrame()
 df_flujos = pd.DataFrame()
 sensibilidad = pd.DataFrame()
-if archivo:
     
 # ==========================================================
 # PARAMETROS DEL MODELO
