@@ -1053,32 +1053,32 @@ c1,c2,c3,c4,c5,c6 = st.columns(6)
 
 c1.metric(
     "DBO Total",
-    f"S/ {TOTAL_DBO:,.0f}"
+    f"S/ {globals().get('TOTAL_DBO',0):,.0f}"
 )
 
 c2.metric(
     "Valor Presente",
-    f"S/ {TOTAL_VP:,.0f}"
+    f"S/ {globals().get('TOTAL_VP',0):,.0f}"
 )
 
 c3.metric(
     "Beneficio Futuro",
-    f"S/ {TOTAL_BENEFICIO:,.0f}"
+    f"S/ {globals().get('TOTAL_BENEFICIO',0):,.0f}"
 )
 
 c4.metric(
     "Service Cost",
-    f"S/ {TOTAL_SERVICE:,.0f}"
+    f"S/ {globals().get('TOTAL_SERVICE',0):,.0f}"
 )
 
 c5.metric(
     "Interest Cost",
-    f"S/ {TOTAL_INTEREST:,.0f}"
+    f"S/ {globals().get('TOTAL_INTEREST',0):,.0f}"
 )
 
 c6.metric(
     "Gasto NIC19",
-    f"S/ {TOTAL_GASTO:,.0f}"
+    f"S/ {globals().get('TOTAL_GASTO',0):,.0f}"
 )
 
 # ==========================================================
