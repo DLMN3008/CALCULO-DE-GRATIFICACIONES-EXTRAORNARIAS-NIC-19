@@ -64,11 +64,12 @@ with col3:
 with col4:
 
     edad_jubilacion = st.number_input(
-        "Edad Jubilación",
-        min_value=55,
-        max_value=90,
-        value=70
-    )
+       "Edad Jubilación",
+    min_value=55,
+    max_value=90,
+    value=70,
+    key="edad_jubilacion"
+   )
 
     FECHA_VALORACION = pd.Timestamp(
         fecha_val
