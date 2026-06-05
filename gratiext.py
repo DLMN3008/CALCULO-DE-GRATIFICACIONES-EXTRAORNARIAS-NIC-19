@@ -33,13 +33,14 @@ col1, col2, col3, col4 = st.columns(4)
 
 with col1:
 
-    fecha_val = st.date_input(
-        "Fecha Valuación",
-        value=date(
-            2025,
-            12,
-            31
-        )
+   fecha_val = st.date_input(
+      "Fecha Valuación",
+    value=date(
+        2025,
+        12,
+        31
+    ),
+    key="fecha_valoracion_principal"
     )
 
 with col2:
@@ -581,6 +582,7 @@ with col1:
             31
         )
     )
+    key="fecha_valoracion_comparativa"
 
 with col2:
 
