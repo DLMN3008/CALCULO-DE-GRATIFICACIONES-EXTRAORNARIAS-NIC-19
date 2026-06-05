@@ -1051,7 +1051,7 @@ st.header(
 
 c1,c2,c3,c4,c5,c6 = st.columns(6)
 
-#c1.metric(
+"""c1.metric(
     #"DBO Total",
     #f"S/ {TOTAL_DBO:,.0f}"
 #)
@@ -1079,7 +1079,7 @@ c5.metric(
 c6.metric(
     "Gasto NIC19",
     f"S/ {TOTAL_GASTO:,.0f}"
-)
+)"""
 
 # ==========================================================
 # TABS
