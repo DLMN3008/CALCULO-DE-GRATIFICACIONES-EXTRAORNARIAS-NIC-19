@@ -26,8 +26,10 @@ st.set_page_config(
 )
 
 # ==========================================================
-# PARAMETROS GENERALES
+# PARAMETROS DEL MODELO
 # ==========================================================
+
+col1, col2, col3, col4 = st.columns(4)
 
 with col1:
 
@@ -38,6 +40,33 @@ with col1:
             12,
             31
         )
+    )
+
+with col2:
+
+    tasa_descuento = st.number_input(
+        "Tasa Descuento",
+        min_value=0.00,
+        max_value=0.20,
+        value=0.07
+    )
+
+with col3:
+
+    incremento_salarial = st.number_input(
+        "Incremento Salarial",
+        min_value=0.00,
+        max_value=0.20,
+        value=0.03
+    )
+
+with col4:
+
+    edad_jubilacion = st.number_input(
+        "Edad Jubilación",
+        min_value=55,
+        max_value=90,
+        value=70
     )
 
     FECHA_VALORACION = pd.Timestamp(
