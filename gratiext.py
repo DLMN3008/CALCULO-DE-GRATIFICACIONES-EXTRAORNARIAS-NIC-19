@@ -29,11 +29,20 @@ st.set_page_config(
 # PARAMETROS GENERALES
 # ==========================================================
 
-FECHA_VALORACION = datetime(
-    2025,
-    12,
-    31
-)
+with col1:
+
+    fecha_val = st.date_input(
+        "Fecha Valuación",
+        value=date(
+            2025,
+            12,
+            31
+        )
+    )
+
+    FECHA_VALORACION = pd.Timestamp(
+        fecha_val
+    )
 
 # ==========================================================
 # FUNCIONES FINANCIERAS
@@ -498,6 +507,36 @@ archivo = st.file_uploader(
 )
 
 # ==========================================================
+# VARIABLES INICIALES
+# ==========================================================
+
+TOTAL_DBO = 0.0
+TOTAL_VP = 0.0
+TOTAL_BENEFICIO = 0.0
+TOTAL_SERVICE = 0.0
+TOTAL_INTEREST = 0.0
+TOTAL_GASTO = 0.0
+
+dbo_trabajador = pd.DataFrame()
+df_flujos = pd.DataFrame()
+sensibilidad = pd.DataFrame()
+
+df_validaciones = pd.DataFrame()
+glosario = pd.DataFrame()
+
+# ==========================================================
+# DETENER SI NO EXISTE ARCHIVO
+# ==========================================================
+
+if archivo is None:
+
+    st.info(
+        "Seleccione un archivo Excel para iniciar el cálculo actuarial."
+    )
+
+    st.stop()
+
+# ==========================================================
 # PARAMETROS DEL MODELO
 # ==========================================================
 
@@ -895,14 +934,16 @@ if archivo:
     # ======================================================
 
     dbo_trabajador[
-        "SERVICE_COST"
-    ] = (
+    	"SERVICE_COST"
+    ] = np.where(
 
-        dbo_trabajador[
-            "DBO_TOTAL"
-        ]
-        /
-        edad_jubilacion
+    	edad_jubilacion > 0,
+
+    	dbo_trabajador[
+        "DBO_TOTAL"
+    	] / edad_jubilacion,
+
+    	0
 
     )
 
@@ -1044,6 +1085,10 @@ if archivo:
 # ==========================================================
 
 st.markdown("---")
+
+if dbo_trabajador.empty:
+
+    st.stop()
 
 st.header(
     "📊 Dashboard Ejecutivo NIC 19"
@@ -1458,9 +1503,16 @@ with tab4:
 
     total_registros = len(base)
 
+
     total_sindicatos = (
-        base["SINDICATO"]
-        .nunique()
+
+    base["SINDICATO"]
+    .nunique()
+
+    if "SINDICATO" in base.columns
+
+    else 0
+
     )
 
     total_sedes = (
