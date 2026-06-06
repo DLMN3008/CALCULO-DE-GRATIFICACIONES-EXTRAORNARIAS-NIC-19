@@ -1,6 +1,5 @@
 # ==========================================================
 # NIC 19 - GRATIFICACION POR TIEMPO DE SERVICIO
-# st.write("Autor: DAVID ENRIQUE LEON NUÑEZ")
 # PARTE 1 CORREGIDA
 # ==========================================================
 
@@ -523,6 +522,9 @@ def calcular_hitos_pucm(
 
 st.title(
     "📊 NIC 19 - Gratificación por Tiempo de Servicio"
+)
+st.caption(
+    "Autor: David Enrique León Núñez"
 )
 
 st.markdown(
