@@ -2,6 +2,7 @@
 # NIC 19 - GRATIFICACION POR TIEMPO DE SERVICIO
 # PARTE 1 CORREGIDA
 # ==========================================================
+st.write("Autor: DAVID ENRIQUE LEON NUÑEZ")
 
 import streamlit as st
 import pandas as pd
